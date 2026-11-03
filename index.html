@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>¡Encuádralo! · Humanos vs IA</title>
+  <meta name="description" content="Juego educativo de detección de objetos: encuadra objetos y compite contra una IA YOLO.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='10' y='10' width='80' height='80' rx='6' fill='%2346178f' stroke='%23ffa602' stroke-width='10'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="fonts/montserrat.css">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body data-pantalla="pantalla-inicio">
+  <div id="fondo" aria-hidden="true"></div>
+
+  <div class="controles-globales">
+    <button id="btn-sonido" class="btn-icono" title="Activar o silenciar el sonido" aria-label="Sonido">🔊</button>
+    <button id="btn-pantalla" class="btn-icono" title="Pantalla completa" aria-label="Pantalla completa">⛶</button>
+  </div>
+
+  <main id="app">
+    <!-- ============================================================ INICIO -->
+    <section id="pantalla-inicio" class="pantalla activa">
+      <h1 class="logo">
+        <span class="logo-caja">
+          <span class="logo-etiqueta">diversión 99%</span>
+          ¡ENCUÁDRALO!
+          <i class="esq esq-1"></i><i class="esq esq-2"></i><i class="esq esq-3"></i><i class="esq esq-4"></i>
+        </span>
+        <span class="logo-sub">HUMANOS <b>VS</b> INTELIGENCIA ARTIFICIAL</span>
+      </h1>
+
+      <div class="tarjeta tarjeta-inicio">
+        <label for="apodo">Tu apodo</label>
+        <input id="apodo" maxlength="16" placeholder="Escribe tu apodo" autocomplete="off" spellcheck="false">
+        <button id="btn-jugar" class="btn btn-grande btn-verde">¡A JUGAR!</button>
+        <button id="btn-como" class="btn btn-morado">¿Cómo se juega?</button>
+      </div>
+
+      <ul class="datos-partida">
+        <li><b data-config="rondas"></b> retos</li>
+        <li><b data-config="segundosRonda"></b> s por reto</li>
+        <li>rival: <b>YOLO11n</b></li>
+      </ul>
+
+      <div id="estado-ia" class="chip-ia cargando" role="status">
+        <span class="chip-icono">🤖</span>
+        <span class="chip-texto">Cargando la IA…</span>
+        <span class="chip-barra"><i></i></span>
+      </div>
+
+      <button id="btn-creditos" class="enlace">Créditos de las imágenes y del modelo</button>
+    </section>
+
+    <!-- ============================================================ TUTORIAL -->
+    <section id="pantalla-tutorial" class="pantalla con-scroll">
+      <h2 class="titulo-pantalla">¿Cómo se juega?</h2>
+      <div class="tutorial">
+        <article class="paso" style="--i:0; --c: var(--rojo)">
+          <div class="paso-cab"><span>1</span> DIBUJA</div>
+          <div class="paso-ilustracion demo-dibuja">
+            <span class="demo-objeto">🐶</span>
+            <span class="demo-caja"></span>
+          </div>
+          <p>Haz clic y <b>arrastra</b> para encuadrar cada objeto que te pidan. <b>Una caja por objeto</b>, ajustada a sus bordes.</p>
+        </article>
+        <article class="paso" style="--i:1; --c: var(--azul)">
+          <div class="paso-cab"><span>2</span> AJUSTA</div>
+          <div class="paso-ilustracion demo-ajusta">
+            <span class="demo-objeto">🚲</span>
+            <span class="demo-caja"><i></i><i></i><i></i><i></i></span>
+          </div>
+          <p>Haz clic en una caja para seleccionarla: arrástrala para moverla o tira de sus <b>esquinas</b>. Bórrala con <b>✕</b>, clic derecho o <kbd>Supr</kbd>.</p>
+        </article>
+        <article class="paso" style="--i:2; --c: var(--amarillo)">
+          <div class="paso-cab"><span>3</span> IoU</div>
+          <div class="paso-ilustracion">
+            <svg class="demo-iou" viewBox="0 0 220 120" aria-label="Diagrama de la intersección sobre la unión">
+              <rect x="30" y="18" width="100" height="80" fill="#1368ce" fill-opacity=".18" stroke="#1368ce" stroke-width="3" stroke-dasharray="7 4"/>
+              <rect x="70" y="32" width="110" height="78" fill="#e21b3c" fill-opacity=".18" stroke="#e21b3c" stroke-width="3"/>
+              <rect x="70" y="32" width="60" height="66" fill="#ffa602" fill-opacity=".85"/>
+              <text x="100" y="70" text-anchor="middle" font-size="13" font-weight="900" fill="#1c1033">∩</text>
+              <text x="34" y="14" font-size="10" font-weight="800" fill="#1368ce">REAL</text>
+              <text x="140" y="27" font-size="10" font-weight="800" fill="#e21b3c">TU CAJA</text>
+            </svg>
+          </div>
+          <p><b>IoU = Intersección ÷ Unión</b>. Mide cuánto se parece tu caja a la real (0–100 %). Es <b>acierto</b> si la IoU llega al <b data-config-pct="iouAcierto"></b>.</p>
+        </article>
+        <article class="paso" style="--i:3; --c: var(--verde)">
+          <div class="paso-cab"><span>4</span> PUNTOS</div>
+          <ul class="paso-puntos">
+            <li><span>✅ Acierto</span><b>IoU × <span data-config="puntosPorIoU"></span></b></li>
+            <li><span>❌ <span data-texto="fp"></span></span><b>−<span data-config="penalizacionFP"></span></b></li>
+            <li><span>🔍 <span data-texto="fn"></span></span><b>−<span data-config="penalizacionFN"></span></b></li>
+            <li><span>⚡ Bonus velocidad</span><b>hasta +<span data-config="bonusTiempoMax"></span></b></li>
+          </ul>
+          <p>Falso positivo: una caja que sobra. Falso negativo: un objeto que se te escapa. Después, <b>la IA juega la misma imagen</b>. ¿Podrás ganarle?</p>
+        </article>
+      </div>
+      <button id="btn-tutorial" class="btn btn-grande btn-verde">¡Entendido!</button>
+    </section>
+
+    <!-- ============================================================ PREVIA DEL RETO -->
+    <section id="pantalla-previa" class="pantalla">
+      <div class="ronda-chip">RONDA <span id="previa-num">1</span> DE <span id="previa-total">8</span></div>
+      <div class="tarjeta-reto">
+        <div class="reto-emoji" id="previa-emoji"></div>
+        <div class="reto-texto">Encuadra <span id="previa-articulo"></span></div>
+        <div class="reto-objeto" id="previa-objeto"></div>
+        <div class="reto-pista" id="previa-pista"></div>
+      </div>
+      <div class="cuenta" id="cuenta">
+        <div class="cuenta-forma"></div>
+        <span class="cuenta-num" id="cuenta-num"></span>
+      </div>
+    </section>
+
+    <!-- ============================================================ RONDA -->
+    <section id="pantalla-ronda" class="pantalla">
+      <header class="barra-ronda">
+        <div class="reloj" id="reloj"><span id="reloj-num">45</span></div>
+        <div class="consigna">
+          <div>Encuadra <span id="ronda-articulo"></span> <span id="ronda-emoji"></span> <b id="ronda-objeto"></b></div>
+          <small id="ronda-pista"></small>
+        </div>
+        <div class="contador-cajas">
+          <b id="num-cajas">0</b><span>cajas</span>
+          <small id="ronda-n"></small>
+        </div>
+      </header>
+      <div class="barra-tiempo"><i id="barra-tiempo"></i></div>
+      <div class="escenario" id="escenario">
+        <div class="marco">
+          <canvas id="lienzo-editor"></canvas>
+          <div class="aviso-tiempo" id="aviso-tiempo" hidden>¡TIEMPO!</div>
+          <div class="capa-ia" id="capa-ia" hidden>
+            <div class="rejilla"></div>
+            <div class="escaner"></div>
+            <div class="mensaje-ia">
+              <span class="robot">🤖</span>
+              <b id="capa-ia-texto">La IA está analizando la imagen…</b>
+              <small>YOLO11n · 2,6 millones de parámetros</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="pie-ronda">
+        <p class="ayuda">🖱️ Arrastra para dibujar · Clic en una caja para seleccionarla, moverla o ajustar sus esquinas · <kbd>Supr</kbd> o ✕ para borrar · <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshace</p>
+        <div class="acciones">
+          <button id="btn-deshacer" class="btn btn-azul" title="Deshacer (Ctrl+Z)">↶ Deshacer</button>
+          <button id="btn-borrar" class="btn btn-rojo">🗑 Borrar todo</button>
+          <button id="btn-hecho" class="btn btn-grande btn-verde">¡HECHO! ✓</button>
+        </div>
+      </footer>
+    </section>
+
+    <!-- ============================================================ RESULTADO DE LA RONDA -->
+    <section id="pantalla-resultado" class="pantalla con-scroll">
+      <header class="cabecera-resultado">
+        <div class="ronda-chip" id="resultado-ronda"></div>
+        <div class="veredicto oculto" id="veredicto"></div>
+      </header>
+      <div class="duelo" id="duelo">
+        <div class="vs">VS</div>
+      </div>
+      <div class="leyenda">
+        <span><i class="ley-acierto"></i>Acierto (IoU ≥ <span data-config-pct="iouAcierto"></span>)</span>
+        <span><i class="ley-fp"></i><span data-texto="fp"></span> (sobra)</span>
+        <span><i class="ley-fn"></i><span data-texto="fn"></span> (falta)</span>
+        <span><i class="ley-gt"></i>Etiqueta real</span>
+      </div>
+      <p class="comparativa" id="comparativa"></p>
+      <footer class="pie-resultado">
+        <div class="marcador">
+          <div class="fila-marcador jugador" id="marcador-jugador"><span class="nombre">TÚ</span><span class="pista"><i class="relleno"></i></span><b>0</b></div>
+          <div class="fila-marcador ia" id="marcador-ia"><span class="nombre">🤖 IA</span><span class="pista"><i class="relleno"></i></span><b>0</b></div>
+        </div>
+        <button id="btn-siguiente" class="btn btn-grande btn-morado">Siguiente ronda →</button>
+      </footer>
+    </section>
+
+    <!-- ============================================================ FINAL -->
+    <section id="pantalla-final" class="pantalla con-scroll">
+      <h2 class="titulo-final" id="titulo-final"></h2>
+      <div class="podio">
+        <div class="podio-col" id="podio-jugador">
+          <span class="corona">👑</span>
+          <span class="podio-avatar">🧑‍🎓</span>
+          <span class="podio-nombre"></span>
+          <div class="podio-bloque"><b class="podio-puntos">0</b><small>puntos</small></div>
+        </div>
+        <div class="podio-col" id="podio-ia">
+          <span class="corona">👑</span>
+          <span class="podio-avatar">🤖</span>
+          <span class="podio-nombre">IA · YOLO11n</span>
+          <div class="podio-bloque"><b class="podio-puntos">0</b><small>puntos</small></div>
+        </div>
+      </div>
+      <p class="conclusion" id="conclusion"></p>
+      <div class="final-rejilla">
+        <div class="tarjeta tarjeta-tabla">
+          <h3>Comparativa</h3>
+          <table class="tabla-stats" id="tabla-stats"></table>
+        </div>
+        <div class="tarjeta tarjeta-tabla">
+          <h3>Ronda a ronda</h3>
+          <div class="tabla-scroll"><table class="tabla-rondas" id="tabla-rondas"></table></div>
+        </div>
+      </div>
+      <aside class="sabias">
+        <b>🤖 ¿Sabías que…?</b>
+        YOLO significa <i>«You Only Look Once»</i> (solo miras una vez): la red analiza la imagen entera de un vistazo y propone todas las cajas a la vez.
+        El modelo al que te has enfrentado, YOLO11n, tiene unos 2,6 millones de parámetros y aprendió con las ~118.000 fotos de entrenamiento de COCO, etiquetadas a mano por personas.
+        Las imágenes de este juego son de la parte de <b>validación</b> de COCO: la IA nunca las vio mientras aprendía.
+      </aside>
+      <div class="acciones-final">
+        <button id="btn-otra" class="btn btn-grande btn-verde">🔁 Jugar otra vez</button>
+        <button id="btn-csv" class="btn btn-azul">⬇ Descargar resultados (CSV)</button>
+        <button id="btn-inicio" class="btn btn-morado">🏠 Inicio</button>
+      </div>
+    </section>
+  </main>
+
+  <template id="tpl-panel">
+    <article class="panel">
+      <div class="panel-cabecera">
+        <span class="avatar"></span>
+        <div class="panel-ident"><span class="panel-nombre"></span><span class="panel-sub"></span></div>
+        <span class="panel-tiempo"></span>
+      </div>
+      <div class="panel-lienzo"><div class="marco"><canvas></canvas></div></div>
+      <ul class="desglose">
+        <li class="linea aciertos"><span class="linea-icono">✅</span><span class="linea-texto">ACIERTOS <b class="n">×0</b><small class="linea-detalle">&nbsp;</small></span><span class="linea-puntos">0</span></li>
+        <li class="linea fp"><span class="linea-icono">❌</span><span class="linea-texto"><span class="t"></span> <b class="n">×0</b><small class="linea-detalle">Cajas que sobran o mal colocadas</small></span><span class="linea-puntos">0</span></li>
+        <li class="linea fn"><span class="linea-icono">🔍</span><span class="linea-texto"><span class="t"></span> <b class="n">×0</b><small class="linea-detalle">Objetos que se quedaron sin caja</small></span><span class="linea-puntos">0</span></li>
+        <li class="linea bonus"><span class="linea-icono">⚡</span><span class="linea-texto">BONUS VELOCIDAD<small class="linea-detalle">&nbsp;</small></span><span class="linea-puntos">0</span></li>
+      </ul>
+      <div class="panel-total"><span>PUNTOS DE LA RONDA <small class="minimo" hidden>(mínimo 0)</small></span><b>0</b></div>
+    </article>
+  </template>
+
+  <dialog id="dialogo-creditos">
+    <form method="dialog" class="creditos">
+      <h2>Créditos</h2>
+      <p><b>Imágenes y etiquetas:</b> <a href="https://cocodataset.org" target="_blank" rel="noopener">COCO dataset</a> (val2017). Etiquetas © COCO Consortium, licencia CC BY 4.0. Cada foto tiene su licencia de Flickr:</p>
+      <ul id="lista-creditos"></ul>
+      <p><b>IA:</b> <a href="https://github.com/ultralytics/ultralytics" target="_blank" rel="noopener">Ultralytics YOLO11n</a> (AGPL-3.0), ejecutada con <a href="https://onnxruntime.ai" target="_blank" rel="noopener">ONNX Runtime Web</a> (MIT).
+        <b>Tipografía:</b> Montserrat (SIL Open Font License).</p>
+      <button class="btn btn-morado">Cerrar</button>
+    </form>
+  </dialog>
+
+  <script src="vendor/ort/ort.wasm.min.js"></script>
+  <script src="js/datos.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/efectos.js"></script>
+  <script src="js/sonido.js"></script>
+  <script src="js/puntuacion.js"></script>
+  <script src="js/detector.js"></script>
+  <script src="js/lienzos.js"></script>
+  <script src="js/juego.js"></script>
+</body>
+</html>
