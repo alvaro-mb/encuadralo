@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>¡Cuéntalos! · Humanos vs IA</title>
+  <meta name="description" content="Juego educativo de recuento de objetos: cuenta los objetos de una foto y compite contra LOCA, una IA especializada en contar.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='42' fill='%2346178f' stroke='%23ffa602' stroke-width='10'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="fonts/montserrat.css">
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/contar.css">
+</head>
+<body data-pantalla="pantalla-inicio">
+  <div id="fondo" aria-hidden="true"></div>
+
+  <nav class="selector-juego" aria-label="Elige juego">
+    <a href="index.html">⬚ ¡Encuádralo!</a>
+    <a href="contar.html" class="actual" aria-current="page">🔢 ¡Cuéntalos!</a>
+    <a href="ubicar.html">📍 ¡Ubícalo!</a>
+  </nav>
+
+  <div class="controles-globales">
+    <button id="btn-sonido" class="btn-icono" title="Activar o silenciar el sonido" aria-label="Sonido">🔊</button>
+    <button id="btn-pantalla" class="btn-icono" title="Pantalla completa" aria-label="Pantalla completa">⛶</button>
+  </div>
+
+  <main id="app">
+    <!-- ============================================================ INICIO -->
+    <section id="pantalla-inicio" class="pantalla activa">
+      <h1 class="logo">
+        <span class="logo-caja logo-contar">
+          <span class="logo-etiqueta">1, 2, 3… ¡99!</span>
+          ¡CUÉNTALOS!
+          <i class="punto p1"></i><i class="punto p2"></i><i class="punto p3"></i>
+        </span>
+        <span class="logo-sub">HUMANOS <b>VS</b> INTELIGENCIA ARTIFICIAL</span>
+      </h1>
+
+      <div class="tarjeta tarjeta-inicio">
+        <label for="apodo">Tu apodo</label>
+        <input id="apodo" maxlength="16" placeholder="Escribe tu apodo" autocomplete="off" spellcheck="false">
+        <button id="btn-jugar" class="btn btn-grande btn-verde">¡A JUGAR!</button>
+        <button id="btn-como" class="btn btn-morado">¿Cómo se juega?</button>
+      </div>
+
+      <ul class="datos-partida">
+        <li><b id="dato-rondas"></b> rondas</li>
+        <li>de <b id="dato-min"></b> a más de <b id="dato-max"></b> objetos</li>
+        <li>rival: <b>LOCA</b></li>
+      </ul>
+
+      <div id="estado-ia" class="chip-ia" role="status">
+        <span class="chip-icono">🤖</span>
+        <span class="chip-texto"></span>
+      </div>
+
+      <button id="btn-creditos" class="enlace">Créditos de las imágenes y del modelo</button>
+    </section>
+
+    <!-- ============================================================ TUTORIAL -->
+    <section id="pantalla-tutorial" class="pantalla con-scroll">
+      <h2 class="titulo-pantalla">¿Cómo se juega?</h2>
+      <div class="tutorial">
+        <article class="paso" style="--i:0; --c: var(--rojo)">
+          <div class="paso-cab"><span>1</span> MIRA LA MUESTRA</div>
+          <div class="paso-ilustracion demo-muestra">
+            <span class="demo-recorte">🍎</span>
+            <span class="demo-flecha">→</span>
+            <span class="demo-grupo">🍎🍎🍎<br>🍎🍎🍎</span>
+          </div>
+          <p>Antes de cada ronda verás <b>un ejemplo</b> del objeto que hay que contar. Solo cuentan los objetos <b>como ese</b>.</p>
+        </article>
+        <article class="paso" style="--i:1; --c: var(--azul)">
+          <div class="paso-cab"><span>2</span> CUENTA</div>
+          <div class="paso-ilustracion demo-marca">
+            <span class="demo-objeto">🐑</span><span class="demo-objeto">🐑</span><span class="demo-objeto">🐑</span>
+            <i class="demo-pin" style="--n:0">1</i><i class="demo-pin" style="--n:1">2</i><i class="demo-pin" style="--n:2">3</i>
+          </div>
+          <p>Si quieres, <b>haz clic en cada objeto</b> para marcarlo y no perder la cuenta. Clic en una marca para quitarla.</p>
+        </article>
+        <article class="paso" style="--i:2; --c: var(--amarillo)">
+          <div class="paso-cab"><span>3</span> RESPONDE</div>
+          <div class="paso-ilustracion">
+            <div class="demo-numero"><b>−</b><span>17</span><b>+</b></div>
+          </div>
+          <p>Escribe <b>cuántos hay</b> (o ajusta el número de marcas con − y +) y pulsa <b>¡HECHO!</b> antes de que se acabe el tiempo.</p>
+        </article>
+        <article class="paso" style="--i:3; --c: var(--verde)">
+          <div class="paso-cab"><span>4</span> PUNTOS</div>
+          <ul class="paso-puntos">
+            <li><span>✅ Precisión</span><b>hasta +<span data-config="puntosPrecision"></span></b></li>
+            <li><span>🎯 Número exacto</span><b>+<span data-config="bonusExacto"></span></b></li>
+            <li><span>⚡ Bonus velocidad</span><b>hasta +<span data-config="bonusTiempoMax"></span></b></li>
+          </ul>
+          <p>Precisión = 1 − error ÷ real. Fallar por 2 cuando hay 10 cuesta lo mismo que fallar por 20 cuando hay 100: cuenta el <b>error relativo</b>. Después, <b>la IA cuenta la misma foto</b>.</p>
+        </article>
+      </div>
+      <button id="btn-tutorial" class="btn btn-grande btn-verde">¡Entendido!</button>
+    </section>
+
+    <!-- ============================================================ PREVIA DEL RETO -->
+    <section id="pantalla-previa" class="pantalla">
+      <div class="ronda-chip">RONDA <span id="previa-num">1</span> DE <span id="previa-total">7</span> · <span id="previa-nivel"></span></div>
+      <div class="tarjeta-reto reto-contar">
+        <div class="reto-muestra">
+          <div class="muestra-marco"><canvas id="previa-muestra"></canvas></div>
+          <small>Muestra</small>
+        </div>
+        <div>
+          <div class="reto-texto">Cuenta <span id="previa-articulo">todos los</span></div>
+          <div class="reto-objeto"><span id="previa-emoji"></span> <span id="previa-objeto"></span></div>
+          <div class="reto-pista" id="previa-pista"></div>
+        </div>
+      </div>
+      <div class="cuenta" id="cuenta">
+        <div class="cuenta-forma"></div>
+        <span class="cuenta-num" id="cuenta-num"></span>
+      </div>
+    </section>
+
+    <!-- ============================================================ RONDA -->
+    <section id="pantalla-ronda" class="pantalla">
+      <header class="barra-ronda">
+        <div class="reloj" id="reloj"><span id="reloj-num">30</span></div>
+        <div class="consigna">
+          <div>Cuenta <span id="ronda-articulo"></span> <span id="ronda-emoji"></span> <b id="ronda-objeto"></b></div>
+          <small id="ronda-pista"></small>
+        </div>
+        <div class="contador-cajas">
+          <b id="ronda-nivel"></b>
+          <small id="ronda-n"></small>
+        </div>
+      </header>
+      <div class="barra-tiempo"><i id="barra-tiempo"></i></div>
+      <div class="zona-conteo">
+        <div class="escenario" id="escenario">
+          <div class="marco">
+            <canvas id="lienzo-conteo"></canvas>
+            <div class="aviso-tiempo" id="aviso-tiempo" hidden>¡TIEMPO!</div>
+            <div class="capa-ia" id="capa-ia" hidden>
+              <div class="rejilla"></div>
+              <div class="escaner"></div>
+              <div class="mensaje-ia">
+                <span class="robot">🤖</span>
+                <b id="capa-ia-texto">La IA está contando…</b>
+                <small>LOCA · mapa de densidad a partir de la muestra</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <aside class="panel-respuesta">
+          <div class="muestra-tarjeta">
+            <div class="muestra-marco"><canvas id="ronda-muestra"></canvas></div>
+            <span>Cuenta objetos<br>como este</span>
+          </div>
+          <div class="caja-respuesta">
+            <label for="respuesta">¿Cuántos hay?</label>
+            <input id="respuesta" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="?">
+            <div class="ajustes">
+              <button class="btn btn-azul" data-delta="-10">−10</button>
+              <button class="btn btn-azul" data-delta="-1">−1</button>
+              <button class="btn btn-azul" data-delta="1">+1</button>
+              <button class="btn btn-azul" data-delta="10">+10</button>
+            </div>
+          </div>
+          <div class="marcas-info">
+            <span>📍 Marcas: <b id="num-marcas">0</b></span>
+            <span class="marcas-botones">
+              <button id="btn-deshacer" class="btn btn-morado" title="Quitar la última marca (Ctrl+Z)">↶</button>
+              <button id="btn-borrar" class="btn btn-rojo" title="Borrar todas las marcas">🗑</button>
+            </span>
+          </div>
+          <button id="btn-hecho" class="btn btn-grande btn-verde">¡HECHO! ✓</button>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================================================ RESULTADO DE LA RONDA -->
+    <section id="pantalla-resultado" class="pantalla con-scroll">
+      <header class="cabecera-resultado">
+        <div class="ronda-chip" id="resultado-ronda"></div>
+        <div class="veredicto oculto" id="veredicto"></div>
+      </header>
+      <div class="duelo" id="duelo">
+        <div class="vs">VS</div>
+      </div>
+      <div class="leyenda">
+        <span><i class="ley-marca"></i>Tus marcas</span>
+        <span><i class="ley-ia"></i>Objetos que cuenta la IA</span>
+        <span><i class="ley-real"></i>Objetos reales (FSC-147)</span>
+      </div>
+      <p class="comparativa" id="comparativa"></p>
+      <footer class="pie-resultado">
+        <div class="marcador">
+          <div class="fila-marcador jugador" id="marcador-jugador"><span class="nombre">TÚ</span><span class="pista"><i class="relleno"></i></span><b>0</b></div>
+          <div class="fila-marcador ia" id="marcador-ia"><span class="nombre">🤖 IA</span><span class="pista"><i class="relleno"></i></span><b>0</b></div>
+        </div>
+        <button id="btn-siguiente" class="btn btn-grande btn-morado">Siguiente ronda →</button>
+      </footer>
+    </section>
+
+    <!-- ============================================================ FINAL -->
+    <section id="pantalla-final" class="pantalla con-scroll">
+      <h2 class="titulo-final" id="titulo-final"></h2>
+      <div class="podio">
+        <div class="podio-col" id="podio-jugador">
+          <span class="corona">👑</span>
+          <span class="podio-avatar">🧑‍🎓</span>
+          <span class="podio-nombre"></span>
+          <div class="podio-bloque"><b class="podio-puntos">0</b><small>puntos</small></div>
+        </div>
+        <div class="podio-col" id="podio-ia">
+          <span class="corona">👑</span>
+          <span class="podio-avatar">🤖</span>
+          <span class="podio-nombre">IA · LOCA</span>
+          <div class="podio-bloque"><b class="podio-puntos">0</b><small>puntos</small></div>
+        </div>
+      </div>
+      <p class="conclusion" id="conclusion"></p>
+      <div class="final-rejilla">
+        <div class="tarjeta tarjeta-tabla">
+          <h3>Comparativa</h3>
+          <table class="tabla-stats" id="tabla-stats"></table>
+        </div>
+        <div class="tarjeta tarjeta-tabla">
+          <h3>Ronda a ronda</h3>
+          <div class="tabla-scroll"><table class="tabla-rondas" id="tabla-rondas"></table></div>
+        </div>
+      </div>
+      <aside class="sabias">
+        <b>🤖 ¿Sabías que…?</b>
+        Tu rival, <b>LOCA</b> (Đukić y otros, ICCV 2023), no busca los objetos uno a uno: mira la <b>muestra</b>, igual que tú,
+        y calcula un <b>mapa de densidad</b> («cuántos objetos hay en cada trocito de la foto»). El recuento es la suma de ese mapa.
+        Por eso no se le escapan las multitudes, aunque con pocos objetos grandes a veces se equivoca más que una persona.
+        Un <b>detector</b> como YOLO (el rival de ¡Encuádralo!) hace otra cosa: pone una caja a cada objeto. Cuando los objetos son pequeños o están amontonados, se le escapan casi todos.
+        LOCA aprendió con <b>FSC-147</b>, el conjunto del que salen estas fotos: más de 6.000 imágenes de 147 tipos de objetos, con un punto marcado a mano en cada uno.
+        Las fotos del juego son de la parte de FSC-147 que LOCA <b>nunca vio</b> al entrenar. Sus recuentos se calcularon antes, sin conexión.
+      </aside>
+      <div class="acciones-final">
+        <button id="btn-otra" class="btn btn-grande btn-verde">🔁 Jugar otra vez</button>
+        <button id="btn-csv" class="btn btn-azul">⬇ Descargar resultados (CSV)</button>
+        <button id="btn-inicio" class="btn btn-morado">🏠 Inicio</button>
+      </div>
+    </section>
+  </main>
+
+  <template id="tpl-panel">
+    <article class="panel">
+      <div class="panel-cabecera">
+        <span class="avatar"></span>
+        <div class="panel-ident"><span class="panel-nombre"></span><span class="panel-sub"></span></div>
+        <span class="panel-tiempo"></span>
+      </div>
+      <div class="panel-lienzo">
+        <div class="marco"><canvas></canvas></div>
+        <div class="recuento-grande"><small>cuenta</small><b>0</b></div>
+      </div>
+      <ul class="desglose">
+        <li class="linea respuesta"><span class="linea-icono">🔢</span><span class="linea-texto">RESPUESTA <b class="n">0</b><small class="linea-detalle">&nbsp;</small></span><span class="linea-puntos"></span></li>
+        <li class="linea aciertos"><span class="linea-icono">✅</span><span class="linea-texto">PRECISIÓN <b class="n">0 %</b><small class="linea-detalle">&nbsp;</small></span><span class="linea-puntos">0</span></li>
+        <li class="linea exacto"><span class="linea-icono">🎯</span><span class="linea-texto">NÚMERO EXACTO<small class="linea-detalle">&nbsp;</small></span><span class="linea-puntos">0</span></li>
+        <li class="linea bonus"><span class="linea-icono">⚡</span><span class="linea-texto">BONUS VELOCIDAD<small class="linea-detalle">&nbsp;</small></span><span class="linea-puntos">0</span></li>
+      </ul>
+      <div class="panel-total"><span>PUNTOS DE LA RONDA</span><b>0</b></div>
+    </article>
+  </template>
+
+  <dialog id="dialogo-creditos">
+    <form method="dialog" class="creditos">
+      <h2>Créditos</h2>
+      <p><b>Imágenes y recuentos:</b> <a href="https://github.com/cvlab-stonybrook/LearningToCountEverything" target="_blank" rel="noopener">FSC-147</a>
+        (V. Ranjan, U. Sharma, T. Nguyen y M. Hoai, «Learning To Count Everything», CVPR 2021). Las fotos proceden de internet
+        y se usan con fines educativos y de investigación; los derechos pertenecen a sus autores. Imágenes usadas:</p>
+      <ul id="lista-creditos"></ul>
+      <p><b>IA:</b> <a href="https://github.com/djukicn/loca" target="_blank" rel="noopener">LOCA</a>
+        (N. Đukić, A. Lukežič, V. Zavrtanik y M. Kristan, «A Low-Shot Object Counting Network With Iterative Prototype Adaptation», ICCV 2023), licencia MIT.
+        Recuentos calculados sin conexión con <a href="https://onnxruntime.ai" target="_blank" rel="noopener">ONNX Runtime</a>.
+        Comparación con <a href="https://github.com/ultralytics/ultralytics" target="_blank" rel="noopener">Ultralytics YOLO11n</a> (AGPL-3.0).
+        <b>Tipografía:</b> Montserrat (SIL Open Font License).</p>
+      <button class="btn btn-morado">Cerrar</button>
+    </form>
+  </dialog>
+
+  <script src="js/datos_conteo.js"></script>
+  <script src="js/config_conteo.js"></script>
+  <script src="js/efectos.js"></script>
+  <script src="js/sonido.js"></script>
+  <script src="js/lienzos.js"></script>
+  <script src="js/contar.js"></script>
+</body>
+</html>
