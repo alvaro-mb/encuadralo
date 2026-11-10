@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>¡Ubícalo! · Humanos vs IA</title>
+  <meta name="description" content="Juego educativo de geolocalización: adivina en el mapa dónde se hizo cada foto de la provincia de Alicante y compite contra la IA GeoCLIP.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 96C30 66 16 52 16 34a34 34 0 0 1 68 0c0 18-14 32-34 62z' fill='%2346178f' stroke='%23ffa602' stroke-width='8'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="fonts/montserrat.css">
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="vendor/maplibre/maplibre-gl.css">
+  <link rel="stylesheet" href="css/ubicar.css">
+</head>
+<body data-pantalla="pantalla-inicio">
+  <div id="fondo" aria-hidden="true"></div>
+
+  <nav class="selector-juego" aria-label="Elige juego">
+    <a href="index.html">⬚ ¡Encuádralo!</a>
+    <a href="contar.html">🔢 ¡Cuéntalos!</a>
+    <a href="ubicar.html" class="actual" aria-current="page">📍 ¡Ubícalo!</a>
+  </nav>
+
+  <div class="controles-globales">
+    <button id="btn-sonido" class="btn-icono" title="Activar o silenciar el sonido" aria-label="Sonido">🔊</button>
+    <button id="btn-pantalla" class="btn-icono" title="Pantalla completa" aria-label="Pantalla completa">⛶</button>
+  </div>
+
+  <main id="app">
+    <!-- ============================================================ INICIO -->
+    <section id="pantalla-inicio" class="pantalla activa">
+      <h1 class="logo">
+        <span class="logo-caja logo-ubicar">
+          <span class="logo-etiqueta">¿Dónde se hizo esta foto?</span>
+          ¡UBÍCALO!
+          <i class="chincheta" aria-hidden="true"></i>
+        </span>
+        <span class="logo-sub">HUMANOS <b>VS</b> INTELIGENCIA ARTIFICIAL</span>
+      </h1>
+
+      <div class="tarjeta tarjeta-inicio">
+        <label for="apodo">Tu apodo</label>
+        <input id="apodo" maxlength="16" placeholder="Escribe tu apodo" autocomplete="off" spellcheck="false">
+        <button id="btn-jugar" class="btn btn-grande btn-verde">¡A JUGAR!</button>
+        <button id="btn-como" class="btn btn-morado">¿Cómo se juega?</button>
+      </div>
+
+      <ul class="datos-partida">
+        <li><b id="dato-rondas"></b> fotos</li>
+        <li>provincia de <b>Alicante</b></li>
+        <li>rival: <b>GeoCLIP</b></li>
+      </ul>
+
+      <div id="estado-ia" class="chip-ia" role="status">
+        <span class="chip-icono">🤖</span>
+        <span class="chip-texto"></span>
+      </div>
+
+      <button id="btn-creditos" class="enlace">Créditos de las fotos, del mapa y del modelo</button>
+    </section>
+
+    <!-- ============================================================ TUTORIAL -->
+    <section id="pantalla-tutorial" class="pantalla con-scroll">
+      <h2 class="titulo-pantalla">¿Cómo se juega?</h2>
+      <div class="tutorial">
+        <article class="paso" style="--i:0; --c: var(--rojo)">
+          <div class="paso-cab"><span>1</span> MIRA LA FOTO</div>
+          <div class="paso-ilustracion demo-foto">
+            <span class="demo-marco">🏰🌴</span>
+            <span class="demo-lupa">🔍</span>
+          </div>
+          <p>Busca <b>pistas</b>: edificios, monumentos, el mar, las montañas, la vegetación… Haz clic en la foto para <b>verla en grande</b>.</p>
+        </article>
+        <article class="paso" style="--i:1; --c: var(--azul)">
+          <div class="paso-cab"><span>2</span> MARCA EN EL MAPA</div>
+          <div class="paso-ilustracion demo-mapa">
+            <span class="demo-costa"></span>
+            <i class="demo-gota"></i>
+          </div>
+          <p>Haz <b>clic en el mapa</b> donde creas que se hizo. Acerca con la <b>rueda del ratón</b> (o pellizcando) y arrastra para moverte. Puedes cambiar la chincheta de sitio.</p>
+        </article>
+        <article class="paso" style="--i:2; --c: var(--amarillo)">
+          <div class="paso-cab"><span>3</span> CONFIRMA</div>
+          <div class="paso-ilustracion">
+            <span class="btn btn-verde demo-aqui">📍 ¡AQUÍ!</span>
+          </div>
+          <p>Pulsa <b>¡AQUÍ!</b> antes de que se acabe el tiempo (<b data-config="segundos"></b> s). Si se acaba, vale la chincheta que hayas puesto. Sin chincheta, 0 puntos.</p>
+        </article>
+        <article class="paso" style="--i:3; --c: var(--verde)">
+          <div class="paso-cab"><span>4</span> PUNTOS</div>
+          <ul class="paso-puntos" id="tabla-distancias"></ul>
+          <p>Puntos = <b>1000 × e<sup>−distancia / 10 km</sup></b>. Cuanto más cerca, más puntos. Después, <b>la IA GeoCLIP</b> intenta adivinar la misma foto.</p>
+        </article>
+      </div>
+      <button id="btn-tutorial" class="btn btn-grande btn-verde">¡Entendido!</button>
+    </section>
+
+    <!-- ============================================================ PREVIA DEL RETO -->
+    <section id="pantalla-previa" class="pantalla">
+      <div class="ronda-chip">FOTO <span id="previa-num">1</span> DE <span id="previa-total">5</span> · <span id="previa-nivel"></span></div>
+      <div class="tarjeta-reto">
+        <div class="reto-emoji">📍</div>
+        <div class="reto-texto">¿Dónde se hizo</div>
+        <div class="reto-objeto">ESTA FOTO?</div>
+        <div class="reto-pista" id="previa-pista"></div>
+      </div>
+      <div class="cuenta" id="cuenta">
+        <div class="cuenta-forma"></div>
+        <span class="cuenta-num" id="cuenta-num"></span>
+      </div>
+    </section>
+
+    <!-- ============================================================ RONDA -->
+    <section id="pantalla-ronda" class="pantalla">
+      <header class="barra-ronda">
+        <div class="reloj" id="reloj"><span id="reloj-num">60</span></div>
+        <div class="consigna">
+          <div>¿Dónde se hizo <b>esta foto</b>?</div>
+          <small>Haz clic en el mapa para poner la chincheta y pulsa ¡AQUÍ!</small>
+        </div>
+        <div class="contador-cajas">
+          <b id="ronda-nivel"></b>
+          <small id="ronda-n"></small>
+        </div>
+      </header>
+      <div class="barra-tiempo"><i id="barra-tiempo"></i></div>
+      <div class="zona-ubicar">
+        <div class="foto-reto" id="foto-reto">
+          <div class="marco">
+            <img id="foto" alt="Foto que hay que ubicar">
+            <button class="btn-icono btn-ampliar" id="btn-ampliar" title="Ver la foto en grande" aria-label="Ver la foto en grande">⤢</button>
+            <div class="aviso-tiempo" id="aviso-tiempo" hidden>¡TIEMPO!</div>
+            <div class="capa-ia" id="capa-ia" hidden>
+              <div class="rejilla"></div>
+              <div class="escaner"></div>
+              <div class="mensaje-ia">
+                <span class="robot">🤖</span>
+                <b id="capa-ia-texto">GeoCLIP está mirando la foto…</b>
+                <small>GeoCLIP · CLIP ViT-L/14 + codificador GPS</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mapa-reto">
+          <div class="marco marco-mapa" id="marco-mapa">
+            <div id="lienzo-mapa" class="lienzo-mapa"></div>
+            <div class="zoom-mapa">
+              <button class="btn-icono" data-zoom="1.6" title="Acercar" aria-label="Acercar">+</button>
+              <button class="btn-icono" data-zoom="0.625" title="Alejar" aria-label="Alejar">−</button>
+              <button class="btn-icono" data-zoom="0" title="Ver toda la provincia" aria-label="Ver toda la provincia">⌂</button>
+            </div>
+          </div>
+          <div class="pie-mapa">
+            <span id="info-pin" class="info-pin">Aún no has puesto la chincheta</span>
+            <button id="btn-hecho" class="btn btn-grande btn-verde" disabled>📍 ¡AQUÍ!</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ RESULTADO DE LA RONDA -->
+    <section id="pantalla-resultado" class="pantalla con-scroll">
+      <header class="cabecera-resultado">
+        <div class="ronda-chip" id="resultado-ronda"></div>
+        <div class="veredicto oculto" id="veredicto"></div>
+      </header>
+      <div class="duelo" id="duelo">
+        <div class="vs">VS</div>
+      </div>
+      <div class="leyenda">
+        <span><i class="ley-pin ley-jugador"></i>Tu chincheta</span>
+        <span><i class="ley-pin ley-ia"></i>Chincheta de la IA</span>
+        <span><i class="ley-pin ley-real"></i>Donde se hizo la foto</span>
+      </div>
+      <p class="comparativa" id="comparativa"></p>
+      <p class="credito-foto" id="credito-foto"></p>
+      <footer class="pie-resultado">
+        <div class="marcador">
+          <div class="fila-marcador jugador" id="marcador-jugador"><span class="nombre">TÚ</span><span class="pista"><i class="relleno"></i></span><b>0</b></div>
+          <div class="fila-marcador ia" id="marcador-ia"><span class="nombre">🤖 IA</span><span class="pista"><i class="relleno"></i></span><b>0</b></div>
+        </div>
+        <button id="btn-siguiente" class="btn btn-grande btn-morado">Siguiente foto →</button>
+      </footer>
+    </section>
+
+    <!-- ============================================================ FINAL -->
+    <section id="pantalla-final" class="pantalla con-scroll">
+      <h2 class="titulo-final" id="titulo-final"></h2>
+      <div class="podio">
+        <div class="podio-col" id="podio-jugador">
+          <span class="corona">👑</span>
+          <span class="podio-avatar">🧑‍🎓</span>
+          <span class="podio-nombre"></span>
+          <div class="podio-bloque"><b class="podio-puntos">0</b><small>puntos</small></div>
+        </div>
+        <div class="podio-col" id="podio-ia">
+          <span class="corona">👑</span>
+          <span class="podio-avatar">🤖</span>
+          <span class="podio-nombre">IA · GeoCLIP</span>
+          <div class="podio-bloque"><b class="podio-puntos">0</b><small>puntos</small></div>
+        </div>
+      </div>
+      <p class="conclusion" id="conclusion"></p>
+      <div class="final-rejilla">
+        <div class="tarjeta tarjeta-tabla">
+          <h3>Comparativa</h3>
+          <table class="tabla-stats" id="tabla-stats"></table>
+        </div>
+        <div class="tarjeta tarjeta-tabla">
+          <h3>Foto a foto</h3>
+          <div class="tabla-scroll"><table class="tabla-rondas" id="tabla-rondas"></table></div>
+        </div>
+      </div>
+      <aside class="sabias">
+        <b>🤖 ¿Sabías que…?</b>
+        GeoCLIP (Vivanco, Nayak y Shah, NeurIPS 2023) aprendió a ubicar fotos viendo <b>millones de imágenes de Flickr</b> con su posición GPS.
+        Tiene dos partes: una red que convierte la foto en una lista de números (la de CLIP) y otra que hace lo mismo con unas coordenadas.
+        Durante el entrenamiento aprende a que la foto y el lugar donde se hizo den listas <b>parecidas</b>.
+        Para adivinar, compara la foto con miles de puntos del mapa y elige el que más se le parece.
+        Aquí ha jugado con <b>la misma pista que tú</b>: solo podía elegir puntos de la provincia de Alicante.
+        Sus predicciones se calcularon antes, sin conexión, porque el modelo es demasiado grande para el navegador.
+      </aside>
+      <div class="acciones-final">
+        <button id="btn-otra" class="btn btn-grande btn-verde">🔁 Jugar otra vez</button>
+        <button id="btn-csv" class="btn btn-azul">⬇ Descargar resultados (CSV)</button>
+        <button id="btn-inicio" class="btn btn-morado">🏠 Inicio</button>
+      </div>
+    </section>
+  </main>
+
+  <template id="tpl-panel">
+    <article class="panel">
+      <div class="panel-cabecera">
+        <span class="avatar"></span>
+        <div class="panel-ident"><span class="panel-nombre"></span><span class="panel-sub"></span></div>
+        <span class="panel-tiempo"></span>
+      </div>
+      <div class="panel-lienzo panel-mapa">
+        <div class="lienzo-mapa"></div>
+        <div class="recuento-grande"><small>distancia</small><b>?</b></div>
+      </div>
+      <ul class="desglose">
+        <li class="linea respuesta"><span class="linea-icono">📍</span><span class="linea-texto">DISTANCIA <b class="n"></b><small class="linea-detalle">&nbsp;</small></span><span class="linea-puntos"></span></li>
+        <li class="linea aciertos"><span class="linea-icono">🎯</span><span class="linea-texto">PRECISIÓN <b class="n"></b><small class="linea-detalle">&nbsp;</small></span><span class="linea-puntos">0</span></li>
+        <li class="linea tiempo"><span class="linea-icono">⏱</span><span class="linea-texto">TIEMPO <b class="n"></b><small class="linea-detalle">&nbsp;</small></span><span class="linea-puntos"></span></li>
+      </ul>
+      <div class="panel-total"><span>PUNTOS DE LA FOTO</span><b>0</b></div>
+    </article>
+  </template>
+
+  <dialog id="dialogo-foto" class="dialogo-foto">
+    <form method="dialog">
+      <img id="foto-grande" alt="Foto que hay que ubicar, en grande">
+      <button class="btn btn-morado" aria-label="Cerrar">✕ Cerrar</button>
+    </form>
+  </dialog>
+
+  <dialog id="dialogo-creditos">
+    <form method="dialog" class="creditos">
+      <h2>Créditos</h2>
+      <p><b>Fotos:</b> <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a>. Se han reducido de tamaño y se les han quitado los metadatos.
+        Para no desvelar las respuestas, aquí no aparece el lugar; se muestra después de cada ronda.</p>
+      <ul id="lista-creditos"></ul>
+      <p><b>Mapa:</b> © colaboradores de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (ODbL),
+        en teselas vectoriales de <a href="https://protomaps.com" target="_blank" rel="noopener">Protomaps</a> guardadas en el propio juego para funcionar sin internet.</p>
+      <p><b>IA:</b> <a href="https://github.com/VicenteVivan/geo-clip" target="_blank" rel="noopener">GeoCLIP</a>
+        (V. Vivanco Cepeda, G. K. Nayak y M. Shah, «GeoCLIP: Clip-Inspired Alignment between Locations and Images for Effective Worldwide Geo-localization», NeurIPS 2023), licencia MIT.
+        Predicciones calculadas sin conexión con <span id="credito-dispositivo">un ordenador del aula</span>.
+        <b>Tipografía:</b> Montserrat (SIL Open Font License).</p>
+      <p><b>Motor del mapa:</b> <a href="https://maplibre.org" target="_blank" rel="noopener">MapLibre GL JS</a>,
+        <a href="https://protomaps.com" target="_blank" rel="noopener">Protomaps</a> (PMTiles y estilo «light»), todos con licencia BSD-3;
+        tipografía Noto Sans (SIL Open Font License) e iconos derivados de tangrams/icons (MIT).</p>
+      <button class="btn btn-morado">Cerrar</button>
+    </form>
+  </dialog>
+
+  <!-- Mapa: MapLibre GL (módulo ES) + teselas de OpenStreetMap de Protomaps. Si no se puede cargar (p. ej., página
+       abierta sin servidor), js/mapa.js usa el mapa simplificado de js/mapa_alicante.js. -->
+  <script>
+    window.MOTOR_MAPA = location.protocol === 'file:' ? Promise.resolve(null)
+      : import('./vendor/maplibre/maplibre-gl.mjs').catch(err => { console.warn('MapLibre no disponible:', err); return null; });
+  </script>
+  <script src="vendor/pmtiles/pmtiles.js"></script>
+  <script src="vendor/protomaps/basemaps.js"></script>
+  <script src="js/mapa_alicante.js"></script>
+  <script src="js/datos_ubicar.js"></script>
+  <script src="js/config_ubicar.js"></script>
+  <script src="js/efectos.js"></script>
+  <script src="js/sonido.js"></script>
+  <script src="js/mapa.js"></script>
+  <script src="js/ubicar.js"></script>
+</body>
+</html>
